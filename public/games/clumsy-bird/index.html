@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Clumsy Bird — Pixelverse Edition</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #090a14;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #game-container {
+      position: relative;
+    }
+    canvas {
+      background: #4ec0ca;
+      box-shadow: 0 0 35px rgba(0, 240, 255, 0.25);
+      border-radius: 12px;
+    }
+    .hud {
+      position: absolute;
+      top: 20px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      pointer-events: none;
+      font-size: 40px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 3px 3px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 12, 22, 0.88);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      backdrop-filter: blur(5px);
+      color: #fff;
+    }
+    .btn {
+      margin-top: 18px;
+      background: #ff0055;
+      color: #fff;
+      border: 2px solid #fff;
+      padding: 10px 28px;
+      font-size: 15px;
+      font-weight: 800;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(255, 0, 85, 0.5);
+    }
+    .btn:hover { background: #ff2a75; }
+    .hint {
+      margin-top: 12px;
+      color: #64748b;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="canvas" width="400" height="540"></canvas>
+    <div class="hud" id="score">0</div>
+    <div id="overlay" class="overlay">
+      <h1 style="font-size: 32px; color: #ffbe0b; text-shadow: 2px 2px #000; margin-bottom: 8px;">CLUMSY BIRD</h1>
+      <p style="color: #cbd5e1; font-size: 14px;">Press Space or Tap Screen to Fly</p>
+      <div id="game-over-stats" style="display: none; margin-top: 14px; text-align: center;">
+        <p style="font-size: 20px; color: #00f0ff;">Score: <span id="final-score">0</span></p>
+        <p style="font-size: 14px; color: #94a3b8;">Best: <span id="best-score">0</span></p>
+      </div>
+      <button class="btn" id="start-btn" onclick="startGame()">FLAP TO START</button>
+    </div>
+  </div>
+  <div class="hint">Controls: <b>Spacebar</b> / <b>Click</b> / <b>Touch</b></div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const overlay = document.getElementById('overlay');
+    const finalScoreEl = document.getElementById('final-score');
+    const bestScoreEl = document.getElementById('best-score');
+    const statsEl = document.getElementById('game-over-stats');
+    const startBtn = document.getElementById('start-btn');
+
+    let best = parseInt(localStorage.getItem('pixelverse_clumsybird_best') || '0', 10);
+    bestScoreEl.textContent = best;
+
+    let gameState = 'START'; // 'START' | 'PLAYING' | 'OVER'
+    let score = 0;
+    let frames = 0;
+
+    const bird = {
+      x: 60,
+      y: 200,
+      radius: 14,
+      velocity: 0,
+      gravity: 0.38,
+      jump: -6.8,
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        let rot = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (this.velocity * 0.08)));
+        ctx.rotate(rot);
+
+        // Body
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffbe0b';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#000';
+        ctx.stroke();
+
+        // Eye
+        ctx.beginPath();
+        ctx.arc(6, -4, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(7, -4, 2, 0, Math.PI * 2);
+        ctx.fillStyle = '#000';
+        ctx.fill();
+
+        // Beak
+        ctx.beginPath();
+        ctx.moveTo(10, 0);
+        ctx.lineTo(19, 4);
+        ctx.lineTo(10, 8);
+        ctx.closePath();
+        ctx.fillStyle = '#ff0055';
+        ctx.fill();
+        ctx.stroke();
+
+        // Wing
+        ctx.beginPath();
+        ctx.ellipse(-6, 2, 7, 4, -0.2, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+      },
+      update() {
+        this.velocity += this.gravity;
+        this.y += this.velocity;
+
+        // Ground collision
+        if (this.y + this.radius >= canvas.height - 40) {
+          this.y = canvas.height - 40 - this.radius;
+          gameOver();
+        }
+        // Ceiling
+        if (this.y - this.radius <= 0) {
+          this.y = this.radius;
+          this.velocity = 0;
+        }
+      },
+      flap() {
+        this.velocity = this.jump;
+        playTone(400, 0.08);
+      }
+    };
+
+    const pipes = {
+      items: [],
+      gap: 130,
+      width: 55,
+      reset() {
+        this.items = [];
+      },
+      draw() {
+        for (const p of this.items) {
+          // Top Pipe
+          ctx.fillStyle = '#2ec4b6';
+          ctx.fillRect(p.x, 0, this.width, p.top);
+          ctx.strokeRect(p.x, 0, this.width, p.top);
+
+          // Pipe Cap
+          ctx.fillStyle = '#3a86ff';
+          ctx.fillRect(p.x - 3, p.top - 20, this.width + 6, 20);
+          ctx.strokeRect(p.x - 3, p.top - 20, this.width + 6, 20);
+
+          // Bottom Pipe
+          const bottomY = p.top + this.gap;
+          ctx.fillStyle = '#2ec4b6';
+          ctx.fillRect(p.x, bottomY, this.width, canvas.height - 40 - bottomY);
+          ctx.strokeRect(p.x, bottomY, this.width, canvas.height - 40 - bottomY);
+
+          // Bottom Cap
+          ctx.fillStyle = '#3a86ff';
+          ctx.fillRect(p.x - 3, bottomY, this.width + 6, 20);
+          ctx.strokeRect(p.x - 3, bottomY, this.width + 6, 20);
+        }
+      },
+      update() {
+        if (frames % 95 === 0) {
+          let topHeight = Math.floor(Math.random() * (canvas.height - 220 - this.gap)) + 50;
+          this.items.push({ x: canvas.width, top: topHeight, passed: false });
+        }
+
+        for (let i = this.items.length - 1; i >= 0; i--) {
+          const p = this.items[i];
+          p.x -= 2.2;
+
+          // Check score
+          if (!p.passed && p.x + this.width < bird.x) {
+            p.passed = true;
+            score++;
+            scoreEl.textContent = score;
+            playTone(600, 0.1);
+            window.parent.postMessage({ type: 'PIXELVERSE_GAME_SCORE', score: score }, '*');
+          }
+
+          // Check Collision
+          if (
+            bird.x + bird.radius > p.x &&
+            bird.x - bird.radius < p.x + this.width
+          ) {
+            if (bird.y - bird.radius < p.top || bird.y + bird.radius > p.top + this.gap) {
+              gameOver();
+            }
+          }
+
+          if (p.x + this.width < 0) {
+            this.items.splice(i, 1);
+          }
+        }
+      }
+    };
+
+    function playTone(freq, dur) {
+      try {
+        const ac = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.1, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+        o.connect(g);
+        g.connect(ac.destination);
+        o.start();
+        o.stop(ac.currentTime + dur);
+      } catch (e) {}
+    }
+
+    function startGame() {
+      score = 0;
+      frames = 0;
+      scoreEl.textContent = '0';
+      bird.y = 200;
+      bird.velocity = 0;
+      pipes.reset();
+      gameState = 'PLAYING';
+      overlay.style.display = 'none';
+      requestAnimationFrame(loop);
+    }
+
+    function gameOver() {
+      gameState = 'OVER';
+      playTone(180, 0.35);
+      if (score > best) {
+        best = score;
+        localStorage.setItem('pixelverse_clumsybird_best', best);
+        bestScoreEl.textContent = best;
+      }
+      finalScoreEl.textContent = score;
+      statsEl.style.display = 'block';
+      startBtn.textContent = 'PLAY AGAIN';
+      overlay.style.display = 'flex';
+      window.parent.postMessage({ type: 'PIXELVERSE_GAME_OVER', score: score }, '*');
+    }
+
+    function drawGround() {
+      ctx.fillStyle = '#ded895';
+      ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height - 40);
+      ctx.lineTo(canvas.width, canvas.height - 40);
+      ctx.stroke();
+
+      // Grass top
+      ctx.fillStyle = '#73bf2e';
+      ctx.fillRect(0, canvas.height - 40, canvas.width, 10);
+    }
+
+    function loop() {
+      if (gameState !== 'PLAYING') return;
+      frames++;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      pipes.update();
+      pipes.draw();
+
+      bird.update();
+      bird.draw();
+
+      drawGround();
+
+      requestAnimationFrame(loop);
+    }
+
+    function flapAction() {
+      if (gameState === 'PLAYING') {
+        bird.flap();
+      } else if (gameState === 'START' || gameState === 'OVER') {
+        startGame();
+      }
+    }
+
+    window.addEventListener('keydown', e => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
+        flapAction();
+      }
+    });
+
+    canvas.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      flapAction();
+    });
+
+    // Initial draw
+    drawGround();
+    bird.draw();
+  </script>
+</body>
+</html>

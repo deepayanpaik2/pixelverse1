@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Cyber Runner — Playverse In-House Edition</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #080910;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .wrapper {
+      position: relative;
+      background: #0d1020;
+      border: 2px solid #202848;
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: 0 0 35px rgba(255, 0, 85, 0.2);
+    }
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #8c9ac2;
+    }
+    .val { font-size: 18px; color: #00f0ff; }
+    canvas {
+      background: linear-gradient(180deg, #090c1a 0%, #151b34 100%);
+      border-radius: 10px;
+      border: 1px solid #1a2240;
+      display: block;
+    }
+    .overlay {
+      position: absolute;
+      inset: 12px;
+      background: rgba(8, 9, 16, 0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      backdrop-filter: blur(4px);
+    }
+    .btn {
+      margin-top: 14px;
+      background: #ff0055;
+      color: #fff;
+      border: none;
+      padding: 9px 24px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 0 16px rgba(255, 0, 85, 0.4);
+    }
+    .hint {
+      margin-top: 8px;
+      font-size: 11px;
+      color: #5d6d93;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="hud">
+      <div>DISTANCE: <span class="val" id="dist">0m</span></div>
+      <div>COINS: <span class="val" id="coins" style="color: #ffbe0b">0</span></div>
+      <div>BEST: <span class="val" id="best" style="color: #39ff14">0m</span></div>
+    </div>
+    <canvas id="canvas" width="480" height="300"></canvas>
+    <div class="overlay" id="overlay" style="display: none;">
+      <h2 style="font-size: 28px; color: #ff0055; margin-bottom: 4px;">NEON WIPEOUT</h2>
+      <p style="color: #8c9ac2; font-size: 13px;">Final Distance: <b id="final-dist" style="color:#00f0ff">0m</b></p>
+      <button class="btn" onclick="initGame()">RUN AGAIN</button>
+    </div>
+  </div>
+  <div class="hint">Controls: <b>Up / Space</b> to Jump | <b>Down</b> to Slide | <b>Tap</b> on Mobile</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const distEl = document.getElementById('dist');
+    const coinsEl = document.getElementById('coins');
+    const bestEl = document.getElementById('best');
+    const overlay = document.getElementById('overlay');
+    const finalDistEl = document.getElementById('final-dist');
+
+    let bestDist = parseInt(localStorage.getItem('playverse_cyberrunner_best') || '0', 10);
+    bestEl.textContent = `${bestDist}m`;
+
+    const GROUND_Y = 240;
+    let player = {
+      x: 60,
+      y: GROUND_Y - 36,
+      w: 22,
+      h: 36,
+      vy: 0,
+      isGrounded: true,
+      isSliding: false,
+    };
+
+    let obstacles = [];
+    let coins = [];
+    let particles = [];
+    let distance = 0;
+    let coinCount = 0;
+    let speed = 4.2;
+    let isGameOver = false;
+    let spawnTimer = 0;
+
+    function playTone(freq, dur = 0.08) {
+      try {
+        const ac = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.08, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+        o.connect(g);
+        g.connect(ac.destination);
+        o.start();
+        o.stop(ac.currentTime + dur);
+      } catch (e) {}
+    }
+
+    function initGame() {
+      player.y = GROUND_Y - 36;
+      player.h = 36;
+      player.vy = 0;
+      player.isGrounded = true;
+      player.isSliding = false;
+      obstacles = [];
+      coins = [];
+      particles = [];
+      distance = 0;
+      coinCount = 0;
+      speed = 4.2;
+      spawnTimer = 0;
+      isGameOver = false;
+      distEl.textContent = '0m';
+      coinsEl.textContent = '0';
+      overlay.style.display = 'none';
+      requestAnimationFrame(loop);
+    }
+
+    function jump() {
+      if (player.isGrounded && !isGameOver) {
+        player.vy = -10.5;
+        player.isGrounded = false;
+        player.isSliding = false;
+        player.h = 36;
+        playTone(520, 0.08);
+      }
+    }
+
+    function slide(on) {
+      if (!player.isGrounded || isGameOver) return;
+      player.isSliding = on;
+      player.h = on ? 18 : 36;
+      player.y = GROUND_Y - player.h;
+    }
+
+    function update() {
+      if (isGameOver) return;
+
+      distance += 0.2;
+      distEl.textContent = `${Math.floor(distance)}m`;
+      speed += 0.0008;
+
+      // Player Physics
+      player.vy += 0.58; // Gravity
+      player.y += player.vy;
+      if (player.y >= GROUND_Y - player.h) {
+        player.y = GROUND_Y - player.h;
+        player.vy = 0;
+        player.isGrounded = true;
+      }
+
+      // Spawning
+      spawnTimer++;
+      if (spawnTimer >= 70) {
+        spawnTimer = 0;
+        const type = Math.random() < 0.4 ? 'high' : 'low';
+        if (type === 'low') {
+          obstacles.push({ x: canvas.width, y: GROUND_Y - 30, w: 18, h: 30, color: '#ff0055' });
+        } else {
+          // Drone barrier (jump or slide under)
+          obstacles.push({ x: canvas.width, y: GROUND_Y - 50, w: 26, h: 22, color: '#9d4edd' });
+        }
+
+        // Spawn Coin
+        if (Math.random() < 0.6) {
+          coins.push({ x: canvas.width + 40, y: GROUND_Y - 45, r: 7 });
+        }
+      }
+
+      // Update Obstacles
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obs = obstacles[i];
+        obs.x -= speed;
+
+        // Collision Check
+        if (
+          player.x < obs.x + obs.w &&
+          player.x + player.w > obs.x &&
+          player.y < obs.y + obs.h &&
+          player.y + player.h > obs.y
+        ) {
+          endGame();
+          return;
+        }
+
+        if (obs.x + obs.w < 0) obstacles.splice(i, 1);
+      }
+
+      // Update Coins
+      for (let i = coins.length - 1; i >= 0; i--) {
+        const c = coins[i];
+        c.x -= speed;
+
+        // Collision with player
+        if (
+          player.x < c.x + c.r &&
+          player.x + player.w > c.x - c.r &&
+          player.y < c.y + c.r &&
+          player.y + player.h > c.y - c.r
+        ) {
+          coinCount++;
+          coinsEl.textContent = coinCount;
+          playTone(880, 0.06);
+          coins.splice(i, 1);
+          window.parent.postMessage({ type: 'PIXELVERSE_GAME_SCORE', score: Math.floor(distance) + coinCount * 50 }, '*');
+          continue;
+        }
+
+        if (c.x + c.r < 0) coins.splice(i, 1);
+      }
+    }
+
+    function endGame() {
+      isGameOver = true;
+      playTone(160, 0.3);
+      const finalDist = Math.floor(distance);
+      if (finalDist > bestDist) {
+        bestDist = finalDist;
+        localStorage.setItem('playverse_cyberrunner_best', bestDist);
+        bestEl.textContent = `${bestDist}m`;
+      }
+      finalDistEl.textContent = `${finalDist}m`;
+      overlay.style.display = 'flex';
+      window.parent.postMessage({ type: 'PIXELVERSE_GAME_OVER', score: finalDist + coinCount * 50 }, '*');
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw Grid Ground
+      ctx.strokeStyle = '#222b4d';
+      ctx.lineWidth = 1;
+      for (let x = (canvas.width - distance * 15) % 30; x < canvas.width; x += 30) {
+        ctx.beginPath();
+        ctx.moveTo(x, GROUND_Y);
+        ctx.lineTo(x - 20, canvas.height);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = '#00f0ff';
+      ctx.fillRect(0, GROUND_Y, canvas.width, 2);
+
+      // Draw Player
+      ctx.fillStyle = player.isSliding ? '#ffbe0b' : '#00f0ff';
+      ctx.shadowColor = ctx.fillStyle;
+      ctx.shadowBlur = 10;
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+
+      // Draw Obstacles
+      for (const obs of obstacles) {
+        ctx.fillStyle = obs.color;
+        ctx.shadowColor = obs.color;
+        ctx.shadowBlur = 12;
+        ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+      }
+
+      // Draw Coins
+      for (const c of coins) {
+        ctx.fillStyle = '#ffbe0b';
+        ctx.shadowColor = '#ffbe0b';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function loop() {
+      update();
+      draw();
+      if (!isGameOver) requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('keydown', e => {
+      if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+        e.preventDefault();
+        jump();
+      } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+        e.preventDefault();
+        slide(true);
+      }
+    });
+
+    window.addEventListener('keyup', e => {
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+        slide(false);
+      }
+    });
+
+    canvas.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      jump();
+    });
+
+    initGame();
+  </script>
+</body>
+</html>

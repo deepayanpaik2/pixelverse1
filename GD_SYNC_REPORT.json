@@ -1,0 +1,251 @@
+{
+  "sync_date": "2026-10-24T15:44:11.980Z",
+  "feed_url": "https://catalog.api.gamedistribution.com/api/v2.0/rss/All/?format=json",
+  "total_fetched": 30,
+  "added": 0,
+  "updated": 30,
+  "unavailable": 0,
+  "failed": 0,
+  "synced_games": [
+    {
+      "title": "Rocketman",
+      "slug": "rocketman",
+      "hash": "e49e7655f70f4d2ca6a007f2698a0d9b",
+      "category": "Adventure",
+      "thumbnail": "https://img.gamedistribution.com/e49e7655f70f4d2ca6a007f2698a0d9b-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/e49e7655f70f4d2ca6a007f2698a0d9b/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Last Ring",
+      "slug": "last-ring",
+      "hash": "d05990e71164473c85e50e35210d5658",
+      "category": "Action",
+      "thumbnail": "https://img.gamedistribution.com/d05990e71164473c85e50e35210d5658-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/d05990e71164473c85e50e35210d5658/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Auto Factory Tycoon",
+      "slug": "auto-factory-tycoon",
+      "hash": "3ee41bfb3567452db6e7faa453d5214f",
+      "category": "Simulation",
+      "thumbnail": "https://img.gamedistribution.com/3ee41bfb3567452db6e7faa453d5214f-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/3ee41bfb3567452db6e7faa453d5214f/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Grass Rush Adventure",
+      "slug": "grass-rush-adventure",
+      "hash": "88d5668d42544d83b26137e7bee612cb",
+      "category": "Adventure",
+      "thumbnail": "https://img.gamedistribution.com/88d5668d42544d83b26137e7bee612cb-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/88d5668d42544d83b26137e7bee612cb/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Mini Golf 3D - Island Course",
+      "slug": "mini-golf-3d-island-course",
+      "hash": "fe757bb6f2674590844c1ec2181c2b78",
+      "category": "Sports",
+      "thumbnail": "https://img.gamedistribution.com/fe757bb6f2674590844c1ec2181c2b78-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/fe757bb6f2674590844c1ec2181c2b78/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Royal Grid",
+      "slug": "royal-grid",
+      "hash": "ad0afcc496d04a078cec75e8c1a65a94",
+      "category": "Puzzle",
+      "thumbnail": "https://img.gamedistribution.com/ad0afcc496d04a078cec75e8c1a65a94-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/ad0afcc496d04a078cec75e8c1a65a94/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Anything Goes: Stickman Brawl",
+      "slug": "anything-goes-stickman-brawl",
+      "hash": "5ca268dd49934d0fad29a4b1b97a4222",
+      "category": "Action",
+      "thumbnail": "https://img.gamedistribution.com/5ca268dd49934d0fad29a4b1b97a4222-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/5ca268dd49934d0fad29a4b1b97a4222/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Stickfront Conquest",
+      "slug": "stickfront-conquest",
+      "hash": "daf71e893d804269a0b14b7793223964",
+      "category": "Strategy",
+      "thumbnail": "https://img.gamedistribution.com/daf71e893d804269a0b14b7793223964-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/daf71e893d804269a0b14b7793223964/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Beauties Goblincore Aesthetic Fashion",
+      "slug": "beauties-goblincore-aesthetic-fashion",
+      "hash": "68f9964508c14a24913a9d4e45ff25ba",
+      "category": "Casual",
+      "thumbnail": "https://img.gamedistribution.com/68f9964508c14a24913a9d4e45ff25ba-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/68f9964508c14a24913a9d4e45ff25ba/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Clean the Squishes! ASMR Sorting Obby",
+      "slug": "clean-the-squishes-asmr-sorting-obby",
+      "hash": "ce6cc8d7f84847de99fc9d83bd2129e1",
+      "category": "Casual",
+      "thumbnail": "https://img.gamedistribution.com/ce6cc8d7f84847de99fc9d83bd2129e1-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/ce6cc8d7f84847de99fc9d83bd2129e1/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Tower Truck: Zombie Siege",
+      "slug": "tower-truck-zombie-siege",
+      "hash": "033a1e3740184ac29d768979dd20e500",
+      "category": "Strategy",
+      "thumbnail": "https://img.gamedistribution.com/033a1e3740184ac29d768979dd20e500-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/033a1e3740184ac29d768979dd20e500/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Spooky Halloween Makeover",
+      "slug": "spooky-halloween-makeover",
+      "hash": "48e09f33add544d6abe2482b3fdb2798",
+      "category": "Casual",
+      "thumbnail": "https://img.gamedistribution.com/48e09f33add544d6abe2482b3fdb2798-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/48e09f33add544d6abe2482b3fdb2798/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Alien Rocket : Cosmic Escape",
+      "slug": "alien-rocket-cosmic-escape",
+      "hash": "8e8039eee40e450ab1838e7fa6166b42",
+      "category": "Casual",
+      "thumbnail": "https://img.gamedistribution.com/8e8039eee40e450ab1838e7fa6166b42-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/8e8039eee40e450ab1838e7fa6166b42/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Climb Everest",
+      "slug": "climb-everest",
+      "hash": "44ed91dfbc404ec9905a1ff03ad29829",
+      "category": "Adventure",
+      "thumbnail": "https://img.gamedistribution.com/44ed91dfbc404ec9905a1ff03ad29829-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/44ed91dfbc404ec9905a1ff03ad29829/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Gnome Deep",
+      "slug": "gnome-deep",
+      "hash": "942a8dce15144ebdaeff3b65d922a850",
+      "category": "Strategy",
+      "thumbnail": "https://img.gamedistribution.com/942a8dce15144ebdaeff3b65d922a850-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/942a8dce15144ebdaeff3b65d922a850/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Typeblade: Shadow Dojo",
+      "slug": "typeblade-shadow-dojo",
+      "hash": "c311bb904a044ac28ad069a4d7367a4a",
+      "category": "Action",
+      "thumbnail": "https://img.gamedistribution.com/c311bb904a044ac28ad069a4d7367a4a-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/c311bb904a044ac28ad069a4d7367a4a/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "FlakWing",
+      "slug": "flakwing",
+      "hash": "4958ea1380e54a27ab1144116cfd8040",
+      "category": "Action",
+      "thumbnail": "https://img.gamedistribution.com/4958ea1380e54a27ab1144116cfd8040-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/4958ea1380e54a27ab1144116cfd8040/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "TILT",
+      "slug": "tilt",
+      "hash": "d5d7ee1413ef44f59b649e39cc56a422",
+      "category": "Casual",
+      "thumbnail": "https://img.gamedistribution.com/d5d7ee1413ef44f59b649e39cc56a422-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/d5d7ee1413ef44f59b649e39cc56a422/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Sprinkle Roll",
+      "slug": "sprinkle-roll",
+      "hash": "a517f3d47bfd45f2a527ade7e64a3522",
+      "category": "Arcade",
+      "thumbnail": "https://img.gamedistribution.com/a517f3d47bfd45f2a527ade7e64a3522-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/a517f3d47bfd45f2a527ade7e64a3522/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Halloween Dress Up Party",
+      "slug": "halloween-dress-up-party",
+      "hash": "ac53e19265034156b7c16c266f594dc4",
+      "category": "Casual",
+      "thumbnail": "https://img.gamedistribution.com/ac53e19265034156b7c16c266f594dc4-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/ac53e19265034156b7c16c266f594dc4/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Color Sort Party",
+      "slug": "color-sort-party",
+      "hash": "78e0482a1e76459fa3e16a305aeadb28",
+      "category": "Puzzle",
+      "thumbnail": "https://img.gamedistribution.com/78e0482a1e76459fa3e16a305aeadb28-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/78e0482a1e76459fa3e16a305aeadb28/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "One Shot Duel Snipe Hide",
+      "slug": "one-shot-duel-snipe-hide",
+      "hash": "6c10464b8fc548209c38be3a0d6ea265",
+      "category": "Adventure",
+      "thumbnail": "https://img.gamedistribution.com/6c10464b8fc548209c38be3a0d6ea265-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/6c10464b8fc548209c38be3a0d6ea265/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Adopt a Monster",
+      "slug": "adopt-a-monster",
+      "hash": "06352b9e161d4fd2b76aa2fc10f8e07a",
+      "category": "Puzzle",
+      "thumbnail": "https://img.gamedistribution.com/06352b9e161d4fd2b76aa2fc10f8e07a-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/06352b9e161d4fd2b76aa2fc10f8e07a/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Ghost Hunt: Spirit Scanner",
+      "slug": "ghost-hunt-spirit-scanner",
+      "hash": "1638b40a170d4ddf830470f0a1e85a2d",
+      "category": "Casual",
+      "thumbnail": "https://img.gamedistribution.com/1638b40a170d4ddf830470f0a1e85a2d-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/1638b40a170d4ddf830470f0a1e85a2d/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Blobby Jars",
+      "slug": "blobby-jars",
+      "hash": "c4ccd398f8ae4b3bb24fa193d96d237f",
+      "category": "Puzzle",
+      "thumbnail": "https://img.gamedistribution.com/c4ccd398f8ae4b3bb24fa193d96d237f-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/c4ccd398f8ae4b3bb24fa193d96d237f/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Quiz Journey: Trivia Adventure",
+      "slug": "quiz-journey-trivia-adventure",
+      "hash": "2d60e7a62bb244f08137435f6cc2d50e",
+      "category": "Educational",
+      "thumbnail": "https://img.gamedistribution.com/2d60e7a62bb244f08137435f6cc2d50e-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/2d60e7a62bb244f08137435f6cc2d50e/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Wheelie Spooky",
+      "slug": "wheelie-spooky",
+      "hash": "d84e079760bc40c1830548e87b6a1adf",
+      "category": "Racing",
+      "thumbnail": "https://img.gamedistribution.com/d84e079760bc40c1830548e87b6a1adf-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/d84e079760bc40c1830548e87b6a1adf/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Ludo Quick: Dice Board Games",
+      "slug": "ludo-quick-dice-board-games",
+      "hash": "75262ef5fe3f44a4ac45006506902f2e",
+      "category": "Board/Card",
+      "thumbnail": "https://img.gamedistribution.com/75262ef5fe3f44a4ac45006506902f2e-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/75262ef5fe3f44a4ac45006506902f2e/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Mine Hunt Classic",
+      "slug": "mine-hunt-classic",
+      "hash": "e724b3defeeb4823867e7e87e996cccb",
+      "category": "Puzzle",
+      "thumbnail": "https://img.gamedistribution.com/e724b3defeeb4823867e7e87e996cccb-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/e724b3defeeb4823867e7e87e996cccb/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    },
+    {
+      "title": "Fruit Blast",
+      "slug": "fruit-blast",
+      "hash": "eaef2e830f5a46bbb2573748a19bce41",
+      "category": "Puzzle",
+      "thumbnail": "https://img.gamedistribution.com/eaef2e830f5a46bbb2573748a19bce41-512x512.jpg",
+      "embed_url": "https://html5.gamedistribution.com/eaef2e830f5a46bbb2573748a19bce41/?gd_sdk_referrer_url=http%3A%2F%2Flocalhost%3A3000"
+    }
+  ]
+}

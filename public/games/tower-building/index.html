@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Tower Builder Cyber — Pixelverse Edition</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #080911;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #game-container {
+      position: relative;
+      border: 2px solid #1f2742;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 0 35px rgba(157, 78, 221, 0.25);
+    }
+    canvas {
+      display: block;
+      background: linear-gradient(180deg, #090b16 0%, #151a30 100%);
+    }
+    .hud {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      font-size: 28px;
+      font-weight: 900;
+      color: #00f0ff;
+      text-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(8, 9, 17, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .btn {
+      margin-top: 16px;
+      background: linear-gradient(135deg, #00f0ff, #9d4edd);
+      color: #000;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #5d6d93;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="canvas" width="400" height="520"></canvas>
+    <div class="hud" id="score">0</div>
+    <div id="overlay" class="overlay" style="display: none;">
+      <h2 style="font-size: 30px; color: #ff0055; margin-bottom: 6px;">TOWER COLLAPSED</h2>
+      <p style="color: #8c9ac2;">Floors Built: <b id="final-score" style="color:#00f0ff">0</b></p>
+      <button class="btn" onclick="initGame()">BUILD AGAIN</button>
+    </div>
+  </div>
+  <div class="hint">Press <b>Spacebar</b> or <b>Click Screen</b> to place block</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const overlay = document.getElementById('overlay');
+    const finalScoreEl = document.getElementById('final-score');
+
+    const BLOCK_HEIGHT = 20;
+    const INITIAL_WIDTH = 180;
+    const COLORS = ['#00f0ff', '#39ff14', '#ffbe0b', '#ff0055', '#9d4edd'];
+
+    let stack = [];
+    let activeBlock = null;
+    let cameraY = 0;
+    let score = 0;
+    let isGameOver = false;
+
+    function playTone(freq, dur = 0.08) {
+      try {
+        const ac = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.08, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+        o.connect(g);
+        g.connect(ac.destination);
+        o.start();
+        o.stop(ac.currentTime + dur);
+      } catch (e) {}
+    }
+
+    function initGame() {
+      stack = [
+        { x: (canvas.width - INITIAL_WIDTH) / 2, width: INITIAL_WIDTH, color: '#00f0ff', y: canvas.height - 50 }
+      ];
+      score = 0;
+      scoreEl.textContent = '0';
+      isGameOver = false;
+      cameraY = 0;
+      overlay.style.display = 'none';
+      spawnActiveBlock();
+      requestAnimationFrame(loop);
+    }
+
+    function spawnActiveBlock() {
+      const top = stack[stack.length - 1];
+      const color = COLORS[stack.length % COLORS.length];
+      activeBlock = {
+        x: 0,
+        y: top.y - BLOCK_HEIGHT,
+        width: top.width,
+        color: color,
+        speed: 3 + Math.min(stack.length * 0.15, 6),
+        dir: 1
+      };
+    }
+
+    function placeBlock() {
+      if (isGameOver || !activeBlock) return;
+      const top = stack[stack.length - 1];
+      const diff = activeBlock.x - top.x;
+
+      if (Math.abs(diff) >= activeBlock.width) {
+        // Total miss
+        endGame();
+        return;
+      }
+
+      // Check perfect placement bonus
+      let newWidth = activeBlock.width - Math.abs(diff);
+      let newX = diff > 0 ? activeBlock.x : top.x;
+
+      if (Math.abs(diff) < 4) {
+        // Snapped perfect
+        newWidth = activeBlock.width;
+        newX = top.x;
+        playTone(660, 0.15);
+      } else {
+        playTone(440, 0.08);
+      }
+
+      stack.push({
+        x: newX,
+        y: activeBlock.y,
+        width: newWidth,
+        color: activeBlock.color
+      });
+
+      score++;
+      scoreEl.textContent = score;
+      window.parent.postMessage({ type: 'PIXELVERSE_GAME_SCORE', score: score }, '*');
+
+      if (stack.length * BLOCK_HEIGHT > canvas.height / 2) {
+        cameraY += BLOCK_HEIGHT;
+      }
+
+      spawnActiveBlock();
+    }
+
+    function endGame() {
+      isGameOver = true;
+      playTone(160, 0.3);
+      finalScoreEl.textContent = score;
+      overlay.style.display = 'flex';
+      window.parent.postMessage({ type: 'PIXELVERSE_GAME_OVER', score: score }, '*');
+    }
+
+    function update() {
+      if (isGameOver || !activeBlock) return;
+      activeBlock.x += activeBlock.speed * activeBlock.dir;
+      if (activeBlock.x <= 0 || activeBlock.x + activeBlock.width >= canvas.width) {
+        activeBlock.dir *= -1;
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      ctx.translate(0, cameraY);
+
+      // Draw stacked blocks
+      for (const b of stack) {
+        ctx.fillStyle = b.color;
+        ctx.shadowColor = b.color;
+        ctx.shadowBlur = 10;
+        ctx.fillRect(b.x, b.y, b.width, BLOCK_HEIGHT);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(b.x, b.y, b.width, BLOCK_HEIGHT);
+      }
+
+      // Draw active block
+      if (activeBlock && !isGameOver) {
+        ctx.fillStyle = activeBlock.color;
+        ctx.shadowColor = activeBlock.color;
+        ctx.shadowBlur = 14;
+        ctx.fillRect(activeBlock.x, activeBlock.y, activeBlock.width, BLOCK_HEIGHT);
+        ctx.strokeStyle = '#fff';
+        ctx.strokeRect(activeBlock.x, activeBlock.y, activeBlock.width, BLOCK_HEIGHT);
+      }
+
+      ctx.restore();
+    }
+
+    function loop() {
+      update();
+      draw();
+      if (!isGameOver) requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('keydown', e => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        placeBlock();
+      }
+    });
+
+    canvas.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      placeBlock();
+    });
+
+    initGame();
+  </script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "name": "Pixelverse - Instant Free Browser Games Portal",
+  "short_name": "Pixelverse",
+  "description": "Play thousands of free browser games instantly with zero downloads, no mandatory sign-up, and silky smooth performance.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07090e",
+  "theme_color": "#07090e",
+  "orientation": "any",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "https://api.dicebear.com/7.x/bottts/svg?seed=pixelverse-icon-192",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://api.dicebear.com/7.x/bottts/svg?seed=pixelverse-icon-512",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

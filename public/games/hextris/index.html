@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Hextris Neon — Pixelverse Edition</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #08090f;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #game-container {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    canvas {
+      background: radial-gradient(circle at center, #11152a 0%, #08090f 75%);
+      box-shadow: 0 0 30px rgba(157, 78, 221, 0.2);
+      border-radius: 12px;
+    }
+    .hud {
+      position: absolute;
+      top: 16px;
+      display: flex;
+      justify-content: space-between;
+      width: 90%;
+      pointer-events: none;
+    }
+    .score-title { font-size: 11px; text-transform: uppercase; color: #7380a5; font-weight: 700; letter-spacing: 1px; }
+    .score-val { font-size: 26px; font-weight: 900; color: #00f0ff; text-shadow: 0 0 10px rgba(0, 240, 255, 0.5); }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(8, 9, 15, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      backdrop-filter: blur(4px);
+    }
+    .btn {
+      margin-top: 16px;
+      background: linear-gradient(135deg, #00f0ff, #9d4edd);
+      color: #000;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+      transition: transform 0.15s;
+    }
+    .btn:hover { transform: scale(1.05); }
+    .controls-hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #5d6988;
+      display: flex;
+      gap: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="canvas" width="460" height="520"></canvas>
+    <div class="hud">
+      <div>
+        <div class="score-title">Score</div>
+        <div class="score-val" id="score">0</div>
+      </div>
+      <div style="text-align: right;">
+        <div class="score-title">Best</div>
+        <div class="score-val" id="best" style="color: #9d4edd;">0</div>
+      </div>
+    </div>
+    <div id="overlay" class="overlay" style="display: none;">
+      <h1 style="font-size: 32px; color: #ff0055; margin-bottom: 6px; text-shadow: 0 0 15px rgba(255, 0, 85, 0.6);">GAME OVER</h1>
+      <p style="color: #8c9ac2; font-size: 15px;">Final Score: <b id="final-score" style="color:#00f0ff">0</b></p>
+      <button class="btn" onclick="startGame()">PLAY AGAIN</button>
+    </div>
+  </div>
+  <div class="controls-hint">
+    <span>Rotate: <b>A / D</b> or <b>Left / Right</b></span>
+    <span>Mobile: <b>Tap Left / Right Screen</b></span>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const bestEl = document.getElementById('best');
+    const overlay = document.getElementById('overlay');
+    const finalScoreEl = document.getElementById('final-score');
+
+    const COLORS = ['#00f0ff', '#9d4edd', '#39ff14', '#ff0055'];
+    let bestScore = parseInt(localStorage.getItem('pixelverse_hextris_best') || '0', 10);
+    bestEl.textContent = bestScore;
+
+    let hexAngle = 0;
+    let targetAngle = 0;
+    let score = 0;
+    let isGameOver = false;
+    let blocks = []; // Blocks currently attached to hexagon sides [side 0..5]
+    let fallingBars = [];
+    let spawnTimer = 0;
+    let spawnInterval = 75;
+    let speed = 2.4;
+
+    const CENTER_X = canvas.width / 2;
+    const CENTER_Y = canvas.height / 2;
+    const HEX_RADIUS = 50;
+    const BLOCK_THICKNESS = 12;
+
+    function playAudioTone(freq, type = 'sine', duration = 0.08) {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function startGame() {
+      hexAngle = 0;
+      targetAngle = 0;
+      score = 0;
+      scoreEl.textContent = '0';
+      isGameOver = false;
+      overlay.style.display = 'none';
+      blocks = [[], [], [], [], [], []];
+      fallingBars = [];
+      spawnTimer = 0;
+      spawnInterval = 75;
+      speed = 2.4;
+      requestAnimationFrame(loop);
+    }
+
+    function rotate(dir) {
+      if (isGameOver) return;
+      targetAngle += dir * (Math.PI / 3);
+      playAudioTone(440, 'triangle', 0.05);
+    }
+
+    function spawnBar() {
+      const side = Math.floor(Math.random() * 6);
+      const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+      fallingBars.push({
+        side: side,
+        color: color,
+        dist: 250,
+      });
+    }
+
+    function update() {
+      if (isGameOver) return;
+
+      // Smooth hex rotation
+      hexAngle += (targetAngle - hexAngle) * 0.35;
+
+      spawnTimer++;
+      if (spawnTimer >= spawnInterval) {
+        spawnBar();
+        spawnTimer = 0;
+        if (spawnInterval > 35) spawnInterval -= 0.2;
+        speed += 0.005;
+      }
+
+      // Update falling bars
+      for (let i = fallingBars.length - 1; i >= 0; i--) {
+        const bar = fallingBars[i];
+        bar.dist -= speed;
+
+        // Current adjusted side relative to rotation
+        let currentRot = (hexAngle % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+        let sideOffset = Math.round(currentRot / (Math.PI / 3)) % 6;
+        let landingSide = (bar.side - sideOffset + 6) % 6;
+
+        let stackHeight = blocks[landingSide].length;
+        let attachDist = HEX_RADIUS + (stackHeight * BLOCK_THICKNESS);
+
+        if (bar.dist <= attachDist) {
+          fallingBars.splice(i, 1);
+          blocks[landingSide].push(bar.color);
+          playAudioTone(320, 'sine', 0.04);
+          checkMatches(landingSide);
+
+          // Check stack overflow game over
+          if (blocks[landingSide].length > 8) {
+            endGame();
+            return;
+          }
+        }
+      }
+    }
+
+    function checkMatches(side) {
+      const stack = blocks[side];
+      if (stack.length >= 3) {
+        let lastColor = stack[stack.length - 1];
+        let matchCount = 1;
+        for (let i = stack.length - 2; i >= 0; i--) {
+          if (stack[i] === lastColor) matchCount++;
+          else break;
+        }
+
+        if (matchCount >= 3) {
+          stack.splice(stack.length - matchCount, matchCount);
+          score += matchCount * 150;
+          scoreEl.textContent = score;
+          playAudioTone(660, 'sine', 0.15);
+          window.parent.postMessage({ type: 'PIXELVERSE_GAME_SCORE', score: score }, '*');
+        }
+      }
+    }
+
+    function endGame() {
+      isGameOver = true;
+      playAudioTone(150, 'sawtooth', 0.3);
+      if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('pixelverse_hextris_best', bestScore);
+        bestEl.textContent = bestScore;
+      }
+      finalScoreEl.textContent = score;
+      overlay.style.display = 'flex';
+      window.parent.postMessage({ type: 'PIXELVERSE_GAME_OVER', score: score }, '*');
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw center rotating hexagon
+      ctx.save();
+      ctx.translate(CENTER_X, CENTER_Y);
+      ctx.rotate(hexAngle);
+
+      // Draw Base Hexagon
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i * Math.PI) / 3;
+        const x = HEX_RADIUS * Math.cos(a);
+        const y = HEX_RADIUS * Math.sin(a);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = '#00f0ff';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#00f0ff';
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = '#101426';
+      ctx.fill();
+      ctx.stroke();
+
+      // Draw stacked blocks on hexagon sides
+      for (let s = 0; s < 6; s++) {
+        const stack = blocks[s];
+        for (let b = 0; b < stack.length; b++) {
+          const r1 = HEX_RADIUS + (b * BLOCK_THICKNESS);
+          const r2 = r1 + BLOCK_THICKNESS;
+          const a1 = (s * Math.PI) / 3;
+          const a2 = ((s + 1) * Math.PI) / 3;
+
+          ctx.beginPath();
+          ctx.arc(0, 0, r2, a1, a2);
+          ctx.arc(0, 0, r1, a2, a1, true);
+          ctx.closePath();
+          ctx.fillStyle = stack[b];
+          ctx.shadowColor = stack[b];
+          ctx.shadowBlur = 8;
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+
+      // Draw falling bars
+      for (const bar of fallingBars) {
+        ctx.save();
+        ctx.translate(CENTER_X, CENTER_Y);
+        const a1 = (bar.side * Math.PI) / 3;
+        const a2 = ((bar.side + 1) * Math.PI) / 3;
+
+        ctx.beginPath();
+        ctx.arc(0, 0, bar.dist + BLOCK_THICKNESS, a1, a2);
+        ctx.arc(0, 0, bar.dist, a2, a1, true);
+        ctx.closePath();
+        ctx.fillStyle = bar.color;
+        ctx.shadowColor = bar.color;
+        ctx.shadowBlur = 12;
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function loop() {
+      update();
+      draw();
+      if (!isGameOver) requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('keydown', e => {
+      if (['ArrowLeft', 'KeyA'].includes(e.code)) { e.preventDefault(); rotate(-1); }
+      if (['ArrowRight', 'KeyD'].includes(e.code)) { e.preventDefault(); rotate(1); }
+    });
+
+    canvas.addEventListener('pointerdown', e => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      if (x < rect.width / 2) rotate(-1);
+      else rotate(1);
+    });
+
+    startGame();
+  </script>
+</body>
+</html>

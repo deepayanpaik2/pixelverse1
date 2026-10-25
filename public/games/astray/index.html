@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Astray 3D Maze — Pixelverse Edition</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #05060b;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .container {
+      position: relative;
+      border: 2px solid #1a233d;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 0 40px rgba(0, 240, 255, 0.2);
+    }
+    canvas#view {
+      display: block;
+      background: #000;
+    }
+    canvas#minimap {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(10, 15, 30, 0.8);
+      border: 1px solid #00f0ff;
+      border-radius: 6px;
+    }
+    .hud {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #00f0ff;
+      background: rgba(10, 15, 30, 0.7);
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid #1a233d;
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(5, 6, 11, 0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .btn {
+      margin-top: 16px;
+      background: #00f0ff;
+      color: #000;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #5d6d93;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <canvas id="view" width="500" height="380"></canvas>
+    <canvas id="minimap" width="90" height="90"></canvas>
+    <div class="hud" id="time-hud">TIME: <span id="time-val">0.0s</span></div>
+    <div class="overlay" id="overlay" style="display: none;">
+      <h2 style="font-size: 32px; color: #39ff14; margin-bottom: 6px;">MAZE ESCAPED!</h2>
+      <p style="color: #8c9ac2;">Escape Time: <b id="final-time" style="color:#00f0ff">0.0s</b></p>
+      <button class="btn" onclick="initGame()">PLAY AGAIN</button>
+    </div>
+  </div>
+  <div class="hint">Use <b>WASD</b> or <b>Arrow Keys</b> to walk and look around</div>
+
+  <script>
+    const canvas = document.getElementById('view');
+    const ctx = canvas.getContext('2d');
+    const mapCanvas = document.getElementById('minimap');
+    const mapCtx = mapCanvas.getContext('2d');
+    const timeVal = document.getElementById('time-val');
+    const overlay = document.getElementById('overlay');
+    const finalTime = document.getElementById('final-time');
+
+    // 10x10 maze grid
+    const MAP = [
+      [1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,1,0,0,0,0,1],
+      [1,0,1,0,1,0,1,1,0,1],
+      [1,0,1,0,0,0,0,1,0,1],
+      [1,0,1,1,1,1,0,1,0,1],
+      [1,0,0,0,0,1,0,0,0,1],
+      [1,1,1,0,0,1,1,1,0,1],
+      [1,0,0,0,1,1,0,0,0,1],
+      [1,0,1,0,0,0,0,1,2,1], // 2 is exit portal
+      [1,1,1,1,1,1,1,1,1,1]
+    ];
+    const MAP_SIZE = 10;
+
+    let posX = 1.5, posY = 1.5;
+    let dirX = 1, dirY = 0;
+    let planeX = 0, planeY = 0.66;
+    let startTime = 0;
+    let isEscaped = false;
+    let keys = {};
+
+    function playTone(freq, dur = 0.1) {
+      try {
+        const ac = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.08, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+        o.connect(g);
+        g.connect(ac.destination);
+        o.start();
+        o.stop(ac.currentTime + dur);
+      } catch (e) {}
+    }
+
+    function initGame() {
+      posX = 1.5; posY = 1.5;
+      dirX = 1; dirY = 0;
+      planeX = 0; planeY = 0.66;
+      startTime = performance.now();
+      isEscaped = false;
+      overlay.style.display = 'none';
+      requestAnimationFrame(loop);
+    }
+
+    function update() {
+      if (isEscaped) return;
+      const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
+      timeVal.textContent = `${elapsed}s`;
+
+      const moveSpeed = 0.05;
+      const rotSpeed = 0.04;
+
+      // Rotate
+      if (keys['ArrowLeft'] || keys['KeyA']) {
+        const oldDirX = dirX;
+        dirX = dirX * Math.cos(-rotSpeed) - dirY * Math.sin(-rotSpeed);
+        dirY = oldDirX * Math.sin(-rotSpeed) + dirY * Math.cos(-rotSpeed);
+        const oldPlaneX = planeX;
+        planeX = planeX * Math.cos(-rotSpeed) - planeY * Math.sin(-rotSpeed);
+        planeY = oldPlaneX * Math.sin(-rotSpeed) + planeY * Math.cos(-rotSpeed);
+      }
+      if (keys['ArrowRight'] || keys['KeyD']) {
+        const oldDirX = dirX;
+        dirX = dirX * Math.cos(rotSpeed) - dirY * Math.sin(rotSpeed);
+        dirY = oldDirX * Math.sin(rotSpeed) + dirY * Math.cos(rotSpeed);
+        const oldPlaneX = planeX;
+        planeX = planeX * Math.cos(rotSpeed) - planeY * Math.sin(rotSpeed);
+        planeY = oldPlaneX * Math.sin(rotSpeed) + planeY * Math.cos(rotSpeed);
+      }
+
+      // Move Forward / Backward
+      if (keys['ArrowUp'] || keys['KeyW']) {
+        const newX = posX + dirX * moveSpeed;
+        const newY = posY + dirY * moveSpeed;
+        if (MAP[Math.floor(posY)][Math.floor(newX)] !== 1) posX = newX;
+        if (MAP[Math.floor(newY)][Math.floor(posX)] !== 1) posY = newY;
+      }
+      if (keys['ArrowDown'] || keys['KeyS']) {
+        const newX = posX - dirX * moveSpeed;
+        const newY = posY - dirY * moveSpeed;
+        if (MAP[Math.floor(posY)][Math.floor(newX)] !== 1) posX = newX;
+        if (MAP[Math.floor(newY)][Math.floor(posX)] !== 1) posY = newY;
+      }
+
+      // Check exit portal
+      if (MAP[Math.floor(posY)][Math.floor(posX)] === 2) {
+        isEscaped = true;
+        playTone(660, 0.3);
+        finalTime.textContent = `${elapsed}s`;
+        overlay.style.display = 'flex';
+        const score = Math.max(100, Math.floor(10000 - parseFloat(elapsed) * 100));
+        window.parent.postMessage({ type: 'PIXELVERSE_GAME_OVER', score: score }, '*');
+      }
+    }
+
+    function render3D() {
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // Draw Ceiling & Floor
+      ctx.fillStyle = '#060812';
+      ctx.fillRect(0, 0, w, h / 2);
+      ctx.fillStyle = '#0f1426';
+      ctx.fillRect(0, h / 2, w, h / 2);
+
+      // Raycasting loop
+      for (let x = 0; x < w; x++) {
+        const cameraX = 2 * x / w - 1;
+        const rayDirX = dirX + planeX * cameraX;
+        const rayDirY = dirY + planeY * cameraX;
+
+        let mapX = Math.floor(posX);
+        let mapY = Math.floor(posY);
+
+        let deltaDistX = Math.abs(1 / rayDirX);
+        let deltaDistY = Math.abs(1 / rayDirY);
+
+        let stepX, stepY, sideDistX, sideDistY;
+        if (rayDirX < 0) {
+          stepX = -1;
+          sideDistX = (posX - mapX) * deltaDistX;
+        } else {
+          stepX = 1;
+          sideDistX = (mapX + 1.0 - posX) * deltaDistX;
+        }
+        if (rayDirY < 0) {
+          stepY = -1;
+          sideDistY = (posY - mapY) * deltaDistY;
+        } else {
+          stepY = 1;
+          sideDistY = (mapY + 1.0 - posY) * deltaDistY;
+        }
+
+        let hit = 0;
+        let side = 0;
+        let wallType = 0;
+
+        while (hit === 0) {
+          if (sideDistX < sideDistY) {
+            sideDistX += deltaDistX;
+            mapX += stepX;
+            side = 0;
+          } else {
+            sideDistY += deltaDistY;
+            mapY += stepY;
+            side = 1;
+          }
+          if (MAP[mapY][mapX] > 0) {
+            hit = 1;
+            wallType = MAP[mapY][mapX];
+          }
+        }
+
+        let perpWallDist = side === 0 ? (mapX - posX + (1 - stepX) / 2) / rayDirX : (mapY - posY + (1 - stepY) / 2) / rayDirY;
+        let lineHeight = Math.floor(h / perpWallDist);
+        let drawStart = -lineHeight / 2 + h / 2;
+        let drawEnd = lineHeight / 2 + h / 2;
+
+        if (wallType === 2) {
+          ctx.fillStyle = '#39ff14'; // Exit portal glow
+        } else {
+          const shade = Math.max(0.1, 1 - (perpWallDist / 8));
+          ctx.fillStyle = side === 1 
+            ? `rgba(0, 240, 255, ${0.7 * shade})` 
+            : `rgba(157, 78, 221, ${0.9 * shade})`;
+        }
+
+        ctx.fillRect(x, drawStart, 1, drawEnd - drawStart);
+      }
+    }
+
+    function renderMinimap() {
+      mapCtx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
+      const cellSize = mapCanvas.width / MAP_SIZE;
+
+      for (let r = 0; r < MAP_SIZE; r++) {
+        for (let c = 0; c < MAP_SIZE; c++) {
+          if (MAP[r][c] === 1) {
+            mapCtx.fillStyle = '#1e284a';
+            mapCtx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+          } else if (MAP[r][c] === 2) {
+            mapCtx.fillStyle = '#39ff14';
+            mapCtx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+          }
+        }
+      }
+
+      // Draw Player dot
+      mapCtx.fillStyle = '#00f0ff';
+      mapCtx.beginPath();
+      mapCtx.arc(posX * cellSize, posY * cellSize, 3, 0, Math.PI * 2);
+      mapCtx.fill();
+    }
+
+    function loop() {
+      update();
+      render3D();
+      renderMinimap();
+      if (!isEscaped) requestAnimationFrame(loop);
+    }
+
+    window.addEventListener('keydown', e => { keys[e.code] = true; });
+    window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+    initGame();
+  </script>
+</body>
+</html>

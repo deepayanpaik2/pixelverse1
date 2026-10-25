@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Cyber Memory Match — Playverse In-House Edition</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #080911;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .container {
+      position: relative;
+      background: #0f1325;
+      border: 2px solid #232c4d;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 0 35px rgba(0, 240, 255, 0.2);
+      max-width: 420px;
+      width: 95vw;
+    }
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .hud-box {
+      background: #171c35;
+      border: 1px solid #263158;
+      border-radius: 8px;
+      padding: 6px 14px;
+      text-align: center;
+    }
+    .label { font-size: 10px; color: #7887b2; text-transform: uppercase; font-weight: 700; }
+    .val { font-size: 18px; font-weight: 800; color: #00f0ff; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-gap: 10px;
+      aspect-ratio: 1;
+    }
+    .card {
+      background: #151a32;
+      border: 2px solid #28345c;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      cursor: pointer;
+      transition: transform 0.25s, background-color 0.25s, border-color 0.25s;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+    .card:hover { border-color: #00f0ff; }
+    .card.flipped {
+      background: #1c2447;
+      border-color: #9d4edd;
+      transform: rotateY(180deg);
+    }
+    .card.matched {
+      background: #123026;
+      border-color: #39ff14;
+      box-shadow: 0 0 15px rgba(57, 255, 20, 0.4);
+      cursor: default;
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(8, 9, 17, 0.93);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 16px;
+      backdrop-filter: blur(5px);
+    }
+    .btn {
+      margin-top: 14px;
+      background: #00f0ff;
+      color: #000;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn:hover { background: #39ff14; box-shadow: 0 0 16px #39ff14; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hud">
+      <div class="hud-box">
+        <div class="label">Moves</div>
+        <div class="val" id="moves">0</div>
+      </div>
+      <div class="hud-box">
+        <div class="label">Matches</div>
+        <div class="val" id="matches" style="color: #39ff14">0/8</div>
+      </div>
+      <div class="hud-box">
+        <div class="label">Time</div>
+        <div class="val" id="timer" style="color: #9d4edd">0s</div>
+      </div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="overlay" id="overlay" style="display: none;">
+      <h2 style="font-size: 28px; color: #39ff14; margin-bottom: 4px;">CIRCUIT RESTORED!</h2>
+      <p style="color: #8c9ac2; font-size: 13px;">Solved in <b id="final-moves" style="color:#00f0ff">0</b> moves (<span id="final-time">0</span>s)</p>
+      <button class="btn" onclick="initGame()">PLAY AGAIN</button>
+    </div>
+  </div>
+
+  <script>
+    const ICONS = ['⚡', '👾', '🚀', '🔮', '💎', '🔥', '🛡️', '👑'];
+    let cards = [];
+    let flippedCards = [];
+    let matchedPairs = 0;
+    let moves = 0;
+    let seconds = 0;
+    let timerInterval = null;
+
+    function playTone(freq, type = 'sine', dur = 0.08) {
+      try {
+        const ac = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.08, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + dur);
+        o.connect(g);
+        g.connect(ac.destination);
+        o.start();
+        o.stop(ac.currentTime + dur);
+      } catch (e) {}
+    }
+
+    function initGame() {
+      matchedPairs = 0;
+      moves = 0;
+      seconds = 0;
+      flippedCards = [];
+      document.getElementById('moves').textContent = '0';
+      document.getElementById('matches').textContent = '0/8';
+      document.getElementById('timer').textContent = '0s';
+      document.getElementById('overlay').style.display = 'none';
+
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        seconds++;
+        document.getElementById('timer').textContent = `${seconds}s`;
+      }, 1000);
+
+      // Create shuffled deck of 16 cards (8 pairs)
+      const deck = [...ICONS, ...ICONS].sort(() => Math.random() - 0.5);
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+
+      cards = deck.map((icon, index) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.icon = icon;
+        card.dataset.index = index;
+        card.addEventListener('click', () => onCardClick(card));
+        grid.appendChild(card);
+        return card;
+      });
+    }
+
+    function onCardClick(card) {
+      if (
+        flippedCards.length >= 2 ||
+        card.classList.contains('flipped') ||
+        card.classList.contains('matched')
+      ) return;
+
+      card.classList.add('flipped');
+      card.textContent = card.dataset.icon;
+      flippedCards.push(card);
+      playTone(400, 'sine', 0.06);
+
+      if (flippedCards.length === 2) {
+        moves++;
+        document.getElementById('moves').textContent = moves;
+        checkMatch();
+      }
+    }
+
+    function checkMatch() {
+      const [c1, c2] = flippedCards;
+      if (c1.dataset.icon === c2.dataset.icon) {
+        c1.classList.add('matched');
+        c2.classList.add('matched');
+        matchedPairs++;
+        document.getElementById('matches').textContent = `${matchedPairs}/8`;
+        playTone(660, 'triangle', 0.15);
+        flippedCards = [];
+
+        window.parent.postMessage({ type: 'PIXELVERSE_GAME_SCORE', score: matchedPairs * 1250 }, '*');
+
+        if (matchedPairs === 8) {
+          clearInterval(timerInterval);
+          document.getElementById('final-moves').textContent = moves;
+          document.getElementById('final-time').textContent = seconds;
+          document.getElementById('overlay').style.display = 'flex';
+          const finalScore = Math.max(100, 10000 - (moves * 150) - (seconds * 50));
+          window.parent.postMessage({ type: 'PIXELVERSE_GAME_OVER', score: finalScore }, '*');
+        }
+      } else {
+        setTimeout(() => {
+          c1.classList.remove('flipped');
+          c2.classList.remove('flipped');
+          c1.textContent = '';
+          c2.textContent = '';
+          flippedCards = [];
+        }, 800);
+      }
+    }
+
+    initGame();
+  </script>
+</body>
+</html>
